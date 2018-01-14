@@ -2,18 +2,13 @@ a = 22695477;
 c = 1;
 m = 2^32;
 X0 = 1;
-X(1) = 0;
-X(1000) = 0;
-
-Y(1) = 100;
-Y(1000) = 0;
+X = 0
+Y = 0
 
 for i = 1:1000
     Y(i + 1) = mod(a * Y(i) + c, m);
     X(i) = mod(a * Y(i) + c, m) / 2^32;
-    disp(X(i))
 end
-
 %M[X]
 
 M = 0;
@@ -32,13 +27,7 @@ end
 disp 'D[X]';
 disp(D);
 
-%k, ro
-
-k = 1:999;
-po = 1:999;
-
-
-
+%correlation
 corr = 1:20;
 
 for i = 1:20
@@ -49,11 +38,13 @@ for i = 1:20
     cov = cov / (20 - i);
     corr(i) = cov / D;
 end
+
 x = linspace(0, 20, 20);
+figure
 plot(x, corr, '-');
+
 figure;
 plot(X(1:999), X(2:1000), '.');
-
 
 
 figure;
