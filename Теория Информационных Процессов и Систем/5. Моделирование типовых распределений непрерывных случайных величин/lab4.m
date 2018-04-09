@@ -8,7 +8,7 @@ a2 = 1103515245;
 m2 = 2^31;
 c2 = 12345;
 
-Y_size = 1000;
+Y_size = 750;
 
 Y1 = zeros(1, Y_size);
 Y1(1) = 1;
@@ -47,25 +47,36 @@ for i = 1:X_size
     X2(i) = M + sqrt(D) * X2(i);
 end
 
+X = [X1, X2];
+X_size = X_size * 2;
 
-M1_e = count_M_e(X1, X_size)
-D1_e = count_D_e(M1_e, X1, X_size)
 
-M2_e = count_M_e(X2, X_size)
-D2_e = count_D_e(M2_e, X2, X_size)
+M_e = count_M_e(X, X_size)
+D_e = count_D_e(M_e, X, X_size)
 
-CI1 = count_CI(M1_e, D1_e, X_size)
-CI2 = count_CI(M2_e, D2_e, X_size)
+CI = count_CI(M_e, D_e, X_size)
 
-plot_correlation(M1_e, D1_e, X1, 1000)
-plot_correlation(M2_e, D2_e, X2, 1000)
+plot_correlation(M_e, D_e, X, 20, X_size)
 
-figure
-histogram(X1)
-figure
-histogram(X2)
+%figure
+%histogram(X, 'NumBins', 20, 'Normalization', 'probability')
 
-function plot_correlation(M_e, D_e, X, size)
+Z = chi_squared_test(X, X_size, M, D)
+
+step = 75
+for i = 1:step:X_size
+    if (i == X_size - step + 1)
+        
+        x = X(i: i + step - 1);
+        z = chi_squared_test(x, step - 1, M, D);
+    else
+        x = X(i: i + step);
+        z = chi_squared_test(x, step, M, D);
+    end
+    disp(z)
+end
+
+function plot_correlation(M_e, D_e, X, size, X_size)
     C = zeros(1, size);
 
     for i = 1:size
@@ -77,11 +88,37 @@ function plot_correlation(M_e, D_e, X, size)
         C(i) = cov / D_e;
     end
     x = linspace(0, size, size);
-    figure
-    plot(x, C, '-');
+    %figure
+    %plot(x, C, '-');
 
-    figure
-    plot(X(1:size - 1), X(2:size), '.');
+    %figure
+    %plot(X(1:X_size - 1), X(2:X_size), '.');
+end
+
+function Z = chi_squared_test(X, X_size, M, D)
+    k = round(1.72 * X_size ^ (1/3));
+    X_min = min(X);
+    X_max = max(X);
+    
+    current_X = X_min;
+    
+    delta = (X_max - X_min) / k;
+    F = @(x) 1 / (sqrt(D) * sqrt(2 * pi)) * exp( -(x - M).^2 / (2 * D) );
+    Z = 0;
+    for i = 1:k
+        a = current_X + (i - 1) * delta;
+        b = a + delta;
+        p = integral(F, a, b);
+        
+        h = 0;
+        for j = 1:X_size
+            if (X(j) >= a) && (X(j) < b)
+                h = h + 1;
+            end
+        end
+        z = (h - X_size * p) ^ 2 / (X_size * p);
+        Z = Z + z;
+    end
 end
 
 function CI = count_CI(M_e, D_e, X_size)
